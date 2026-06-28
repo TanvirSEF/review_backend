@@ -35,12 +35,15 @@ source venv/Scripts/activate        # Git Bash · use venv/bin/activate on Mac/L
 pip install -r requirements.txt
 
 cp .env.example .env                # then add your Postgres connection string
+# create the database first (any name), e.g. in psql:
+#   CREATE DATABASE your_db;
 
 fastapi dev app/main.py
 ```
 
-The API starts at `http://127.0.0.1:8000`. Tables are created automatically on startup, so
-no migration commands are needed — just make sure the database named in `.env` exists.
+The API starts at `http://127.0.0.1:8000`. The database itself must already exist — but the
+tables (`users`, `products`, `reviews`) are created automatically on startup, so no
+migration commands are needed.
 
 ## API Endpoints
 
