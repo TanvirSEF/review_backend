@@ -15,11 +15,16 @@ Base = declarative_base()
 
 def ensure_schema():
     inspector = inspect(engine)
-    if inspector.has_table("users"):
-        columns = {c["name"] for c in inspector.get_columns("users")}
-        if "password_hash" not in columns:
+    for table_name, table in Base.metadata.tables.items():
+        if not inspector.has_table(table_name):
+            continue
+        existing = {c["name"] for c in inspector.get_columns(table_name)}
+        for column in table.columns:
+            if column.name in existing:
+                continue
+            col_type = column.type.compile(dialect=engine.dialect)
             with engine.begin() as conn:
-                conn.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR"))
+                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column.name} {col_type}"))
 
 
 def get_db():
