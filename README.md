@@ -70,18 +70,6 @@ venv\Scripts\Activate.ps1
 
 ### 2. Install dependencies
 
-Create `requirements.txt` with:
-
-```txt
-fastapi[standard]>=0.110
-sqlalchemy>=2.0
-psycopg2-binary>=2.9
-pydantic[email]>=2.5
-python-dotenv>=1.0
-```
-
-Then install:
-
 ```bash
 pip install -r requirements.txt
 ```
