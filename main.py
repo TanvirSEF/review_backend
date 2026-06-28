@@ -8,8 +8,6 @@ import models
 import schemas
 from database import engine, get_db
 
-# Create database tables on startup. Good enough for this assessment —
-# a real project would use Alembic migrations instead.
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -18,7 +16,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Allow the frontend (e.g. Next.js) to call this API during development.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -35,13 +32,13 @@ def read_root():
 
 @app.get("/api/products", response_model=List[schemas.ProductListResponse])
 def get_all_products(db: Session = Depends(get_db)):
-    # Each product with its average rating. Products without reviews get 0.0.
     query = (
         select(
             models.Product.id,
             models.Product.title,
             models.Product.description,
             models.Product.image_url,
+            # average rating, 0.0 when there are no reviews yet
             func.coalesce(func.round(func.avg(models.Review.rating), 1), 0.0).label("average_rating"),
         )
         .select_from(models.Product)
@@ -59,11 +56,9 @@ def get_product_details(id: int, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found across database instances")
 
-    # Newest reviews first.
     reviews_query = select(models.Review).where(models.Review.product_id == id).order_by(models.Review.created_at.desc())
     reviews = db.execute(reviews_query).scalars().all()
 
-    # Attach the reviewer's name to each review.
     formatted_reviews = []
     for r in reviews:
         user_obj = db.execute(select(models.User).where(models.User.id == r.user_id)).scalar_one_or_none()
@@ -89,7 +84,6 @@ def get_product_details(id: int, db: Session = Depends(get_db)):
 
 @app.post("/api/reviews", response_model=schemas.ReviewResponse, status_code=status.HTTP_201_CREATED)
 def create_product_review(review: schemas.ReviewCreate, db: Session = Depends(get_db)):
-    # Make sure the product and user actually exist before saving the review.
     product_exists = db.execute(select(models.Product.id).where(models.Product.id == review.product_id)).scalar()
     if not product_exists:
         raise HTTPException(status_code=404, detail="Target product structure does not exist")
@@ -124,7 +118,6 @@ def update_product_review(id: int, review_update: schemas.ReviewUpdate, db: Sess
     if not db_review:
         raise HTTPException(status_code=404, detail="Review item sequence not tracked")
 
-    # Only update the fields that were provided.
     if review_update.rating is not None:
         db_review.rating = review_update.rating
     if review_update.comment is not None:

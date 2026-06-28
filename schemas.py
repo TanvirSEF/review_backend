@@ -3,8 +3,6 @@ from datetime import datetime
 from typing import List, Optional
 
 
-# --- User schemas ---
-
 class UserBase(BaseModel):
     name: str
     email: EmailStr
@@ -21,8 +19,6 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
-
-# --- Review schemas ---
 
 class ReviewBase(BaseModel):
     product_id: int
@@ -46,13 +42,11 @@ class ReviewResponse(BaseModel):
     rating: int
     comment: Optional[str] = None
     created_at: datetime
-    user: str  # reviewer's name, looked up from the User table
+    user: str  # reviewer's name
 
     class Config:
         from_attributes = True
 
-
-# --- Product schemas ---
 
 class ProductBase(BaseModel):
     title: str
