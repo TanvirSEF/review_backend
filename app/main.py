@@ -1,16 +1,30 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
-from app import models  # noqa: F401  registers models on Base.metadata
 from app.routers import products, reviews
 
-Base.metadata.create_all(bind=engine)
+logger = logging.getLogger("uvicorn.error")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables ready.")
+    except Exception as e:
+        logger.error("Could not connect to the database: %s", e)
+    yield
+
 
 app = FastAPI(
     title="ReviewDibo API Module",
     description="Full Stack Developer Technical Assessment APIs",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
