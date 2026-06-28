@@ -22,18 +22,24 @@ Built as part of the Full-Stack Developer technical assessment for ReviewDibo.
 
 ```
 backend/
-├── main.py            # FastAPI app and all API routes
-├── database.py        # Engine, session, Base, and get_db() dependency
-├── models.py          # ORM models: User, Product, Review
-├── schemas.py         # Pydantic schemas for validation
-├── .env               # Local config (not committed)
-├── .env.example       # Template to copy into .env
-├── requirements.txt   # Python dependencies
+├── app/
+│   ├── main.py            # FastAPI app, CORS, router wiring
+│   ├── config.py          # Settings (reads DATABASE_URL from .env)
+│   ├── database.py        # Engine, session, Base, get_db()
+│   ├── models/            # ORM models: user, product, review
+│   ├── schemas/           # Pydantic request/response schemas
+│   └── routers/           # API routes: products, reviews
+├── .env                   # Local config (not committed)
+├── .env.example           # Template to copy into .env
+├── requirements.txt       # Python dependencies
+├── Dockerfile
+├── docker-compose.yml
 └── README.md
 ```
 
-Each file has a single job: database wiring in `database.py`, models in `models.py`,
-schemas in `schemas.py`, and routes in `main.py`. No logic is crammed into one place.
+The code lives inside an `app/` package — config and database wiring sit at the top,
+while models, schemas, and routes each get their own folder. Adding a new feature
+usually means touching one folder, not one big file.
 
 ---
 
@@ -105,7 +111,7 @@ CREATE DATABASE reviewdibo;
 Start the development server with hot reload:
 
 ```bash
-fastapi dev main.py
+fastapi dev app/main.py
 ```
 
 It runs on `http://127.0.0.1:8000`. Check that it's up:
@@ -126,10 +132,10 @@ quick and painless. Instead, the app creates its own tables on startup using SQL
 built-in schema generator:
 
 ```python
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 ```
 
-In plain terms: when the server starts, it reads the models in `models.py` (`users`,
+In plain terms: when the server starts, it reads the models under `app/models/` (`users`,
 `products`, `reviews`) and creates any tables that are missing. If a table already exists,
 it's left untouched — nothing gets dropped or overwritten.
 
