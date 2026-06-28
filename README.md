@@ -127,9 +127,29 @@ curl http://127.0.0.1:8000/
 # {"status":"ReviewDibo API is running perfectly!"}
 ```
 
-> On startup, `main.py` runs `models.Base.metadata.create_all(bind=engine)`, which creates
-> the `users`, `products`, and `reviews` tables automatically if they don't exist yet — no
-> manual migration needed for this assessment.
+> The tables are created automatically on startup — see **Database Migration & Schema Setup** below.
+
+---
+
+## 🔄 Database Migration & Schema Setup
+
+For this assessment, I skipped a full migration tool like Alembic so that local setup stays
+quick and painless. Instead, the app creates its own tables on startup using SQLAlchemy's
+built-in schema generator:
+
+```python
+models.Base.metadata.create_all(bind=engine)
+```
+
+In plain terms: when the server starts, it reads the models in `models.py` (`users`,
+`products`, `reviews`) and creates any tables that are missing. If a table already exists,
+it's left untouched — nothing gets dropped or overwritten.
+
+So there are no migration commands to run. Just make sure the database named in your
+`DATABASE_URL` exists, start the app, and the tables show up on their own.
+
+> This is fine for a quick demo or assessment. In a production codebase I'd reach for
+> Alembic to get proper, versioned migrations.
 
 ---
 
