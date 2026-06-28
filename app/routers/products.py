@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
 from typing import List
@@ -27,6 +27,19 @@ def get_all_products(db: Session = Depends(get_db)):
 
     results = db.execute(query).mappings().all()
     return results
+
+
+@router.post("", response_model=schemas.ProductListResponse, status_code=status.HTTP_201_CREATED)
+def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
+    db_product = models.Product(
+        title=product.title,
+        description=product.description,
+        image_url=product.image_url,
+    )
+    db.add(db_product)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
 
 
 @router.get("/{id}", response_model=schemas.ProductDetailResponse)
