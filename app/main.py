@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import Base, engine
-from app.routers import products, reviews, users
+from app.routers import auth, products, reviews, users
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -37,6 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(products.router)
 app.include_router(reviews.router)
 app.include_router(users.router)
