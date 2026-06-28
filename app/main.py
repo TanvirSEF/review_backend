@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import settings
 from app.database import Base, engine
 from app.routers import products, reviews, users
 
@@ -21,15 +22,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="ReviewDibo API Module",
+    title="ReviewDibo API",
     description="Product review API",
     version="1.0.0",
     lifespan=lifespan,
 )
 
+allow_origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,4 +44,4 @@ app.include_router(users.router)
 
 @app.get("/")
 def read_root():
-    return {"status": "ReviewDibo API is running perfectly!"}
+    return {"status": "ok"}
