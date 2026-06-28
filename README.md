@@ -1,202 +1,66 @@
 # ReviewDibo — Backend API
 
-The backend service for **ReviewDibo**, a simple product-review platform. It exposes a
-small REST API for browsing products, viewing aggregated ratings, and managing
-user-submitted reviews.
-
-Built as part of the Full-Stack Developer technical assessment for ReviewDibo.
-
----
+Backend service for **ReviewDibo**, a product-review platform. A small REST API for
+browsing products, viewing average ratings, and managing user reviews. Built for the
+ReviewDibo full-stack technical assessment.
 
 ## Tech Stack
 
-- **FastAPI** — web framework
-- **Python 3.10+**
-- **PostgreSQL** — database
-- **SQLAlchemy 2.0** — ORM (modern `select()` query API)
-- **Pydantic v2** — request/response validation
-
----
+FastAPI · Python 3.10+ · PostgreSQL · SQLAlchemy 2.0 · Pydantic v2
 
 ## Project Structure
 
 ```
 backend/
 ├── app/
-│   ├── main.py            # FastAPI app, CORS, router wiring
-│   ├── config.py          # Settings (reads DATABASE_URL from .env)
-│   ├── database.py        # Engine, session, Base, get_db()
-│   ├── models/            # ORM models: user, product, review
-│   ├── schemas/           # Pydantic request/response schemas
-│   └── routers/           # API routes: products, reviews
-├── .env                   # Local config (not committed)
-├── .env.example           # Template to copy into .env
-├── requirements.txt       # Python dependencies
+│   ├── main.py          # FastAPI app, CORS, router wiring
+│   ├── config.py        # settings (reads DATABASE_URL)
+│   ├── database.py      # engine, Base, get_db()
+│   ├── models/          # User, Product, Review
+│   ├── schemas/         # Pydantic schemas
+│   └── routers/         # products & reviews endpoints
+├── requirements.txt
 ├── Dockerfile
-├── docker-compose.yml
-└── README.md
+└── docker-compose.yml
 ```
 
-The code lives inside an `app/` package — config and database wiring sit at the top,
-while models, schemas, and routes each get their own folder. Adding a new feature
-usually means touching one folder, not one big file.
+## Setup & Run
 
----
-
-## Prerequisites
-
-- Python 3.10 or newer
-- PostgreSQL running locally (or a reachable remote instance)
-- A database you can connect to (e.g. `reviewdibo`)
-
----
-
-## Setup
-
-All commands are run from the `backend/` directory.
-
-### 1. Create and activate a virtual environment
+All commands run from the `backend/` folder.
 
 ```bash
 python -m venv venv
-```
+source venv/Scripts/activate        # Git Bash · use venv/bin/activate on Mac/Linux
 
-Activate it:
-
-```bash
-# macOS / Linux
-source venv/bin/activate
-
-# Windows (Git Bash)
-source venv/Scripts/activate
-
-# Windows (PowerShell)
-venv\Scripts\Activate.ps1
-```
-
-### 2. Install dependencies
-
-```bash
 pip install -r requirements.txt
-```
 
-### 3. Configure the database
+cp .env.example .env                # then add your Postgres connection string
 
-Copy the template and fill in your real PostgreSQL credentials:
-
-```bash
-cp .env.example .env
-```
-
-```dotenv
-DATABASE_URL=postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/reviewdibo
-```
-
-If `DATABASE_URL` is missing, the app refuses to start with a clear error — so a bad
-config never fails silently.
-
-### 4. Create the database (once)
-
-The tables themselves are created automatically on startup (see below), but the database
-named in `DATABASE_URL` has to exist first:
-
-```sql
-CREATE DATABASE reviewdibo;
-```
-
----
-
-## Running the App
-
-Start the development server with hot reload:
-
-```bash
 fastapi dev app/main.py
 ```
 
-It runs on `http://127.0.0.1:8000`. Check that it's up:
-
-```bash
-curl http://127.0.0.1:8000/
-# {"status":"ReviewDibo API is running perfectly!"}
-```
-
-> The tables are created automatically on startup — see **Database Migration & Schema Setup** below.
-
----
-
-## 🔄 Database Migration & Schema Setup
-
-For this assessment, I skipped a full migration tool like Alembic so that local setup stays
-quick and painless. Instead, the app creates its own tables on startup using SQLAlchemy's
-built-in schema generator:
-
-```python
-Base.metadata.create_all(bind=engine)
-```
-
-In plain terms: when the server starts, it reads the models under `app/models/` (`users`,
-`products`, `reviews`) and creates any tables that are missing. If a table already exists,
-it's left untouched — nothing gets dropped or overwritten.
-
-So there are no migration commands to run. Just make sure the database named in your
-`DATABASE_URL` exists, start the app, and the tables show up on their own.
-
-> This is fine for a quick demo or assessment. In a production codebase I'd reach for
-> Alembic to get proper, versioned migrations.
-
----
+The API starts at `http://127.0.0.1:8000`. Tables are created automatically on startup, so
+no migration commands are needed — just make sure the database named in `.env` exists.
 
 ## API Endpoints
 
-Base URL: `http://127.0.0.1:8000`
+| Method   | Endpoint             | What it does                          |
+| -------- | -------------------- | ------------------------------------- |
+| `GET`    | `/api/products`      | All products, each with avg rating    |
+| `GET`    | `/api/products/{id}` | One product with its reviews          |
+| `POST`   | `/api/reviews`       | Create a review (rating must be 1–5)  |
+| `PUT`    | `/api/reviews/{id}`  | Update a review's rating / comment    |
+| `DELETE` | `/api/reviews/{id}`  | Delete a review                       |
 
-| Method   | Endpoint             | Description                                                          | Status           |
-| -------- | -------------------- | -------------------------------------------------------------------- | ---------------- |
-| `GET`    | `/`                  | Health check                                                         | `200 OK`         |
-| `GET`    | `/api/products`      | All products with a rounded `average_rating`                         | `200 OK`         |
-| `GET`    | `/api/products/{id}` | One product with its nested reviews and reviewer names               | `200 OK`         |
-| `POST`   | `/api/reviews`       | Create a review (validates product & user; rating must be 1–5)       | `201 Created`    |
-| `PUT`    | `/api/reviews/{id}`  | Update a review's rating and/or comment                              | `200 OK`         |
-| `DELETE` | `/api/reviews/{id}`  | Delete a review                                                      | `204 No Content` |
-
-A few quick examples:
+Create a review:
 
 ```bash
-# Create a review
 curl -X POST http://127.0.0.1:8000/api/reviews \
   -H "Content-Type: application/json" \
-  -d '{ "product_id": 1, "user_id": 2, "rating": 5, "comment": "Great product." }'
-
-# Get a product with its reviews
-curl http://127.0.0.1:8000/api/products/1
-
-# Update a review
-curl -X PUT http://127.0.0.1:8000/api/reviews/1 \
-  -H "Content-Type: application/json" \
-  -d '{ "rating": 4 }'
+  -d '{ "product_id": 1, "user_id": 2, "rating": 5, "comment": "Great product!" }'
 ```
 
-The `rating` field is validated to be an integer from 1 to 5. Anything outside that range
-is rejected with a `422` before it touches the database.
+## Interactive Docs
 
----
-
-## Interactive Docs (Swagger / OpenAPI)
-
-FastAPI generates the docs straight from the code. While the server is running:
-
-- **Swagger UI** — http://127.0.0.1:8000/docs
-- **ReDoc** — http://127.0.0.1:8000/redoc
-
-Swagger UI lets you click any endpoint, hit **Try it out**, fill in the request body, and
-run it live in the browser. It's the fastest way to explore the API without writing any
-code.
-
----
-
-## CORS
-
-During development the API accepts requests from any origin, so a frontend on a different
-port (say a Next.js app) can talk to it without issues. Before going to production, the
-allowed origins should be locked down to the real frontend domain.
+While the server runs, open **http://127.0.0.1:8000/docs** for Swagger UI — click any
+endpoint, hit **Try it out**, and run it live in the browser.
