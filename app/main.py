@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ReviewDibo API Module",
-    description="Full Stack Developer Technical Assessment APIs",
+    description="Product review API",
     version="1.0.0",
     lifespan=lifespan,
 )

@@ -33,29 +33,31 @@ def get_all_products(db: Session = Depends(get_db)):
 def get_product_details(id: int, db: Session = Depends(get_db)):
     product = db.execute(select(models.Product).where(models.Product.id == id)).scalar_one_or_none()
     if not product:
-        raise HTTPException(status_code=404, detail="Product not found across database instances")
+        raise HTTPException(status_code=404, detail="Product not found")
 
-    reviews_query = select(models.Review).where(models.Review.product_id == id).order_by(models.Review.created_at.desc())
-    reviews = db.execute(reviews_query).scalars().all()
+    rows = db.execute(
+        select(models.Review, models.User.name)
+        .join(models.Review.user)
+        .where(models.Review.product_id == id)
+        .order_by(models.Review.created_at.desc())
+    ).all()
 
-    formatted_reviews = []
-    for r in reviews:
-        user_obj = db.execute(select(models.User).where(models.User.id == r.user_id)).scalar_one_or_none()
-        username = user_obj.name if user_obj else "Anonymous User"
-
-        formatted_reviews.append({
-            "id": r.id,
-            "product_id": r.product_id,
-            "rating": r.rating,
-            "comment": r.comment,
-            "created_at": r.created_at,
-            "user": username,
-        })
+    reviews = [
+        {
+            "id": review.id,
+            "product_id": review.product_id,
+            "rating": review.rating,
+            "comment": review.comment,
+            "created_at": review.created_at,
+            "user": name,
+        }
+        for review, name in rows
+    ]
 
     return {
         "id": product.id,
         "title": product.title,
         "description": product.description,
         "image_url": product.image_url,
-        "reviews": formatted_reviews,
+        "reviews": reviews,
     }

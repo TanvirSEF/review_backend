@@ -12,11 +12,11 @@ router = APIRouter(prefix="/api/reviews", tags=["reviews"])
 def create_product_review(review: schemas.ReviewCreate, db: Session = Depends(get_db)):
     product_exists = db.execute(select(models.Product.id).where(models.Product.id == review.product_id)).scalar()
     if not product_exists:
-        raise HTTPException(status_code=404, detail="Target product structure does not exist")
+        raise HTTPException(status_code=404, detail="Product not found")
 
     user_obj = db.execute(select(models.User).where(models.User.id == review.user_id)).scalar_one_or_none()
     if not user_obj:
-        raise HTTPException(status_code=404, detail="Assigned user profile mapping not found")
+        raise HTTPException(status_code=404, detail="User not found")
 
     db_review = models.Review(
         product_id=review.product_id,
@@ -42,7 +42,7 @@ def create_product_review(review: schemas.ReviewCreate, db: Session = Depends(ge
 def update_product_review(id: int, review_update: schemas.ReviewUpdate, db: Session = Depends(get_db)):
     db_review = db.execute(select(models.Review).where(models.Review.id == id)).scalar_one_or_none()
     if not db_review:
-        raise HTTPException(status_code=404, detail="Review item sequence not tracked")
+        raise HTTPException(status_code=404, detail="Review not found")
 
     if review_update.rating is not None:
         db_review.rating = review_update.rating
@@ -68,7 +68,7 @@ def update_product_review(id: int, review_update: schemas.ReviewUpdate, db: Sess
 def delete_product_review(id: int, db: Session = Depends(get_db)):
     db_review = db.execute(select(models.Review).where(models.Review.id == id)).scalar_one_or_none()
     if not db_review:
-        raise HTTPException(status_code=404, detail="Requested review structure missing from nodes")
+        raise HTTPException(status_code=404, detail="Review not found")
 
     db.delete(db_review)
     db.commit()
