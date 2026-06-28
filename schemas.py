@@ -1,15 +1,18 @@
-# backend/schemas.py
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import List, Optional
 
-# --- USER SCHEMAS ---
+
+# --- User schemas ---
+
 class UserBase(BaseModel):
     name: str
     email: EmailStr
 
+
 class UserCreate(UserBase):
     pass
+
 
 class UserResponse(UserBase):
     id: int
@@ -18,19 +21,24 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
-# --- REVIEW SCHEMAS ---
+
+# --- Review schemas ---
+
 class ReviewBase(BaseModel):
     product_id: int
     user_id: int
     rating: int = Field(..., ge=1, le=5, description="Rating must be between 1 and 5")
     comment: Optional[str] = None
 
+
 class ReviewCreate(ReviewBase):
     pass
+
 
 class ReviewUpdate(BaseModel):
     rating: Optional[int] = Field(None, ge=1, le=5)
     comment: Optional[str] = None
+
 
 class ReviewResponse(BaseModel):
     id: int
@@ -38,19 +46,23 @@ class ReviewResponse(BaseModel):
     rating: int
     comment: Optional[str] = None
     created_at: datetime
-    user: str  # Combined lookup details response payload
+    user: str  # reviewer's name, looked up from the User table
 
     class Config:
         from_attributes = True
 
-# --- PRODUCT SCHEMAS ---
+
+# --- Product schemas ---
+
 class ProductBase(BaseModel):
     title: str
     description: Optional[str] = None
     image_url: Optional[str] = None
 
+
 class ProductCreate(ProductBase):
     pass
+
 
 class ProductListResponse(ProductBase):
     id: int
@@ -58,6 +70,7 @@ class ProductListResponse(ProductBase):
 
     class Config:
         from_attributes = True
+
 
 class ProductDetailResponse(ProductBase):
     id: int
