@@ -41,7 +41,7 @@ def get_current_user(
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
         user_id = int(payload["sub"])
         user = db.execute(select(models.User).where(models.User.id == user_id)).scalar_one_or_none()
-    except (jwt.PyJWTError, ValueError, KeyError, TypeError):
+    except (jwt.PyJWTError, ValueError, KeyError):
         raise credentials_error
     if user is None:
         raise credentials_error
