@@ -1,69 +1,73 @@
-# ReviewDibo — Backend API
+# ReviewDibo API
 
-Backend service for **ReviewDibo**, a product-review platform. A small REST API for
-browsing products, viewing average ratings, and managing user reviews. Built for the
-ReviewDibo full-stack technical assessment.
+Backend for **ReviewDibo**, a product-review app. Users can browse products, see average
+ratings, and write reviews — with JWT auth so only logged-in users can post or edit.
 
-## Tech Stack
+## Stack
 
-FastAPI · Python 3.10+ · PostgreSQL · SQLAlchemy 2.0 · Pydantic v2
+FastAPI · PostgreSQL · SQLAlchemy 2.0 · Pydantic v2. Passwords are hashed with bcrypt and
+auth tokens are JWT (PyJWT).
 
-## Project Structure
-
-```
-backend/
-├── app/
-│   ├── main.py          # FastAPI app, CORS, router wiring
-│   ├── config.py        # settings (reads DATABASE_URL)
-│   ├── database.py      # engine, Base, get_db()
-│   ├── models/          # User, Product, Review
-│   ├── schemas/         # Pydantic schemas
-│   └── routers/         # products & reviews endpoints
-├── requirements.txt
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## Setup & Run
-
-All commands run from the `backend/` folder.
+## Run locally
 
 ```bash
 python -m venv venv
-source venv/Scripts/activate        # Git Bash · use venv/bin/activate on Mac/Linux
-
+source venv/bin/activate        # Git Bash on Windows: source venv/Scripts/activate
 pip install -r requirements.txt
-
-cp .env.example .env                # then add your Postgres connection string
-# create the database first (any name), e.g. in psql:
-#   CREATE DATABASE your_db;
-
+cp .env.example .env            # fill in DATABASE_URL and JWT_SECRET
 fastapi dev app/main.py
 ```
 
-The API starts at `http://127.0.0.1:8000`. The database itself must already exist — but the
-tables (`users`, `products`, `reviews`) are created automatically on startup, so no
-migration commands are needed.
+You need a Postgres database already created (any name). The app creates the tables itself
+on startup, so there's nothing to migrate. API runs on http://127.0.0.1:8000, docs on
+http://127.0.0.1:8000/docs.
 
-## API Endpoints
+## Layout
 
-| Method   | Endpoint             | What it does                          |
-| -------- | -------------------- | ------------------------------------- |
-| `GET`    | `/api/products`      | All products, each with avg rating    |
-| `GET`    | `/api/products/{id}` | One product with its reviews          |
-| `POST`   | `/api/reviews`       | Create a review (rating must be 1–5)  |
-| `PUT`    | `/api/reviews/{id}`  | Update a review's rating / comment    |
-| `DELETE` | `/api/reviews/{id}`  | Delete a review                       |
-
-Create a review:
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/reviews \
-  -H "Content-Type: application/json" \
-  -d '{ "product_id": 1, "user_id": 2, "rating": 5, "comment": "Great product!" }'
+```
+app/
+  main.py        app + router wiring
+  config.py      settings from env
+  database.py    engine + session
+  security.py    hashing, JWT, current user
+  models/        User, Product, Review
+  schemas/       Pydantic schemas
+  routers/       auth, users, products, reviews
 ```
 
-## Interactive Docs
+## Endpoints
 
-While the server runs, open **http://127.0.0.1:8000/docs** for Swagger UI — click any
-endpoint, hit **Try it out**, and run it live in the browser.
+No login needed:
+
+- `POST /api/users` — register
+- `POST /api/auth/login` — log in, get a JWT
+- `POST /api/products` — add a product
+- `GET /api/products` — list, each with its average rating
+- `GET /api/products/{id}` — one product and its reviews
+
+Login required (send `Authorization: Bearer <token>`):
+
+- `POST /api/reviews` — write a review
+- `PUT /api/reviews/{id}` — edit your own review
+- `DELETE /api/reviews/{id}` — delete your own review
+
+The author of a review is whoever is logged in, and you can only change your own reviews.
+
+## Try it
+
+```bash
+# register
+curl -X POST localhost:8000/api/users -H "Content-Type: application/json" \
+  -d '{"name":"Hasan","email":"h@e.com","password":"pass1234"}'
+
+# log in (copy access_token out of the response)
+curl -X POST localhost:8000/api/auth/login -d "username=h@e.com&password=pass1234"
+
+# post a review with the token
+curl -X POST localhost:8000/api/reviews \
+  -H "Authorization: Bearer <paste-token-here>" \
+  -H "Content-Type: application/json" \
+  -d '{"product_id":1,"rating":5,"comment":"solid"}'
+```
+
+Or just open http://127.0.0.1:8000/docs and use the **Authorize** button.
