@@ -20,6 +20,7 @@ def get_all_products(db: Session = Depends(get_db)):
             models.Product.image_url,
             # average rating, 0.0 when there are no reviews yet
             func.coalesce(func.round(func.avg(models.Review.rating), 1), 0.0).label("average_rating"),
+            func.count(models.Review.id).label("review_count"),
         )
         .select_from(models.Product)
         .outerjoin(models.Review)

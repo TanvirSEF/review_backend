@@ -17,6 +17,7 @@ class ProductCreate(ProductBase):
 class ProductListResponse(ProductBase):
     id: int
     average_rating: float = 0.0
+    review_count: int = 0
 
     class Config:
         from_attributes = True
