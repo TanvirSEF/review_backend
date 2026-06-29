@@ -39,16 +39,33 @@ app/
 
 ## Admin account
 
-Product management is admin-only. On startup the app creates a default admin if one
-doesn't already exist, using the `ADMIN_EMAIL` / `ADMIN_PASSWORD` settings — defaults
-`admin@reviewdibo.com` / `admin`.
+Creating products is admin-only, so on startup the app makes sure an admin account exists.
+Two quick things worth knowing — both are simple:
 
-The admin logs in through the normal login endpoint to get a JWT, then sends it as a
-`Bearer` token when creating products:
+**Set the credentials in your environment.** The admin is built from two settings,
+`ADMIN_EMAIL` and `ADMIN_PASSWORD`. Put the email and password you actually want into your
+`.env` (locally) or your deploy platform's environment variables, and that's exactly what
+the admin gets created with. Skip them and the app falls back to its built-in defaults:
+
+| Setting | Default if you don't set it |
+| --- | --- |
+| `ADMIN_EMAIL` | `admin@reviewdibo.com` |
+| `ADMIN_PASSWORD` | `admin` |
+
+**It only runs once.** The seeder checks on every startup, but it only creates the admin
+when one doesn't exist yet. So on the first start (a fresh database) the admin is created
+with whatever you put in the env — and after that it's left untouched. Later restarts or
+deploys won't recreate it, overwrite the password, or add a duplicate. (One side effect of
+that: set a strong password *before* the first deploy. If you ever need to change it
+afterwards, update it straight in the database.)
+
+Once it exists, the admin logs in through the normal login endpoint to get a JWT, then
+sends it as a `Bearer` token when creating products:
 
 ```bash
 # log in as admin (copy access_token out of the response)
-curl -X POST localhost:8000/api/auth/login -d "username=admin@reviewdibo.com&password=admin"
+curl -X POST localhost:8000/api/auth/login \
+  -d "username=admin@reviewdibo.com&password=<your-admin-password>"
 
 # create a product with the admin token
 curl -X POST localhost:8000/api/products \
@@ -57,10 +74,9 @@ curl -X POST localhost:8000/api/products \
   -d '{"title":"Wireless Mouse","description":"Quiet clicks, USB-C.","image_url":"https://.../mouse.jpg"}'
 ```
 
-> **Change the defaults in production.** `admin` / `admin` is a convenience for local/dev.
-> In real deployments set a strong `ADMIN_PASSWORD` (and `ADMIN_EMAIL`) through environment
-> variables. The seeder only creates the account on first run — rotating the password later
-> means updating it in the database directly.
+> For production: the `admin` / `admin` defaults are just a convenience for local dev. Set a
+> strong `ADMIN_PASSWORD` (and `ADMIN_EMAIL` if you like) in your environment before the
+> first start.
 
 ## Endpoints
 
