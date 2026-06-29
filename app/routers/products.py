@@ -5,6 +5,7 @@ from typing import List
 
 from app import models, schemas
 from app.database import get_db
+from app.security import get_current_admin
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
@@ -30,7 +31,11 @@ def get_all_products(db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=schemas.ProductListResponse, status_code=status.HTTP_201_CREATED)
-def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
+def create_product(
+    product: schemas.ProductCreate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(get_current_admin),
+):
     db_product = models.Product(
         title=product.title,
         description=product.description,

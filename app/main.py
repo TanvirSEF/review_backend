@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import Base, engine, ensure_schema
 from app.routers import auth, products, reviews, users
+from app.security import seed_admin
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -16,7 +17,8 @@ async def lifespan(app: FastAPI):
     try:
         ensure_schema()
         Base.metadata.create_all(bind=engine)
-        logger.info("Database tables ready.")
+        seed_admin()
+        logger.info("Database tables ready. Admin account ensured.")
     except Exception as e:
         logger.error("Could not connect to the database: %s", e)
     yield

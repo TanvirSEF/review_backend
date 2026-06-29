@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app import models
 from app.config import settings
-from app.database import get_db
+from app.database import SessionLocal, get_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -46,3 +46,33 @@ def get_current_user(
     if user is None:
         raise credentials_error
     return user
+
+
+def get_current_admin(
+    current_user: models.User = Depends(get_current_user),
+) -> models.User:
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required",
+        )
+    return current_user
+
+
+def seed_admin() -> None:
+    # Make sure the default admin account exists. Runs on every startup but is
+    # a no-op once the admin is already in the database.
+    with SessionLocal() as db:
+        existing = db.execute(
+            select(models.User).where(models.User.email == settings.ADMIN_EMAIL)
+        ).scalar_one_or_none()
+        if existing is not None:
+            return
+        admin = models.User(
+            name="Admin",
+            email=settings.ADMIN_EMAIL,
+            password_hash=hash_password(settings.ADMIN_PASSWORD),
+            is_admin=True,
+        )
+        db.add(admin)
+        db.commit()
