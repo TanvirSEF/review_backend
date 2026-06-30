@@ -9,20 +9,80 @@ Products are managed by **admins**.
 FastAPI · PostgreSQL · SQLAlchemy 2.0 · Pydantic v2. Passwords are hashed with bcrypt and
 auth tokens are JWT (PyJWT).
 
-## Run locally
+## Setup
+
+### Prerequisites
+
+- **Python 3.11+** — check with `python --version`.
+- **PostgreSQL 14+** running locally. Install it natively, or skip to the
+  [Docker](#with-docker) section and let compose spin one up for you.
+- **Git Bash** on Windows (or any POSIX shell on macOS/Linux).
+
+### 1. Install dependencies
 
 ```bash
 python -m venv venv
-source venv/bin/activate        # Git Bash on Windows: source venv/Scripts/activate
+source venv/Scripts/activate     # Windows · Git Bash
+# source venv/bin/activate       # macOS / Linux
 pip install -r requirements.txt
-cp .env.example .env            # fill in DATABASE_URL and JWT_SECRET
+```
+
+### 2. Create the database
+
+The app creates its own tables on startup, but the database itself has to exist first.
+Any name works — `reviewdibo` here:
+
+```bash
+psql -U postgres -c "CREATE DATABASE reviewdibo;"
+```
+
+(Or `createdb reviewdibo`, or create it through pgAdmin / your DB tool.)
+
+### 3. Configure your environment
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and fill in at least:
+
+- **`DATABASE_URL`** — your Postgres connection string, in the form
+  `postgresql://USER:PASSWORD@localhost:5432/reviewdibo`. Match the user, password, and
+  database name you set up in Postgres.
+- **JWT_SECRET** — a long random string. Generate one with
+  `python -c "import secrets; print(secrets.token_hex(32))"`.
+
+Optionally set **`ADMIN_EMAIL`** / **`ADMIN_PASSWORD`** now if you want the seeded admin to
+use your own credentials instead of the defaults — see [Admin account](#admin-account).
+
+### 4. Run
+
+```bash
 fastapi dev app/main.py
 ```
 
-You need a Postgres database already created (any name). The app creates the tables itself
-on startup, so there's nothing to migrate. It also makes sure a default admin account
-exists (see [Admin account](#admin-account)). API runs on http://127.0.0.1:8000, docs on
-http://127.0.0.1:8000/docs.
+API on http://127.0.0.1:8000, interactive docs on http://127.0.0.1:8000/docs. Tables and
+the admin account are created on first startup.
+
+### With Docker
+
+Prefer not to install Postgres by hand? `docker compose` brings up Postgres and the API
+together. Add these three to your `.env` — compose uses them to create the database:
+
+```ini
+POSTGRES_USER=reviewdibo
+POSTGRES_PASSWORD=change-me
+POSTGRES_DB=reviewdibo
+```
+
+Then:
+
+```bash
+docker compose up --build
+```
+
+`DATABASE_URL` is wired for you (it points at the `db` service), so you don't set it here.
+The API runs on http://localhost:8000.
 
 ## Layout
 
@@ -98,6 +158,7 @@ Login required (send `Authorization: Bearer <token>`):
 - `DELETE /api/reviews/{id}` — delete your own review
 
 The author of a review is whoever is logged in, and you can only change your own reviews.
+You can drive all of these from the **Authorize** button at http://127.0.0.1:8000/docs.
 
 ## Environment variables
 
@@ -109,23 +170,3 @@ The author of a review is whoever is logged in, and you can only change your own
 | `ADMIN_EMAIL` | `admin@reviewdibo.com` | Default admin email, seeded on startup. |
 | `ADMIN_PASSWORD` | `admin` | Default admin password. Change in prod. |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` | JWT lifetime in minutes. |
-
-## Try it
-
-```bash
-# register a normal user
-curl -X POST localhost:8000/api/users -H "Content-Type: application/json" \
-  -d '{"name":"Hasan","email":"h@e.com","password":"pass1234"}'
-
-# log in (copy access_token out of the response)
-curl -X POST localhost:8000/api/auth/login -d "username=h@e.com&password=pass1234"
-
-# post a review with the token
-curl -X POST localhost:8000/api/reviews \
-  -H "Authorization: Bearer <paste-token-here>" \
-  -H "Content-Type: application/json" \
-  -d '{"product_id":1,"rating":5,"comment":"solid"}'
-```
-
-Or just open http://127.0.0.1:8000/docs and use the **Authorize** button (works for both
-regular users and the admin).
