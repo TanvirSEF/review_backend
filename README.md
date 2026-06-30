@@ -2,7 +2,7 @@
 
 Backend for **ReviewDibo**, a product review app. Users can browse products, see average
 ratings, and write reviews. To post or edit a review you need to log in, and only admins
-can add products.
+can add, edit, and delete products.
 
 ## Stack
 
@@ -108,6 +108,8 @@ curl.exe -X POST localhost:8000/api/auth/login -d "username=admin@reviewdibo.com
 **Admin only**
 
 - `POST /api/products` — add a product
+- `PUT /api/products/{id}` — edit a product
+- `DELETE /api/products/{id}` — delete a product
 
 **Logged-in users**
 
