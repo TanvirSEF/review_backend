@@ -81,3 +81,45 @@ def get_product_details(id: int, db: Session = Depends(get_db)):
         "image_url": product.image_url,
         "reviews": reviews,
     }
+
+
+@router.put("/{id}", response_model=schemas.ProductListResponse)
+def update_product(
+    id: int,
+    product_update: schemas.ProductUpdate,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(get_current_admin),
+):
+    product = db.execute(
+        select(models.Product).where(models.Product.id == id)
+    ).scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    if product_update.title is not None:
+        product.title = product_update.title
+    if product_update.description is not None:
+        product.description = product_update.description
+    if product_update.image_url is not None:
+        product.image_url = product_update.image_url
+
+    db.commit()
+    db.refresh(product)
+    return product
+
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_product(
+    id: int,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(get_current_admin),
+):
+    product = db.execute(
+        select(models.Product).where(models.Product.id == id)
+    ).scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    db.delete(product)
+    db.commit()
+    return None

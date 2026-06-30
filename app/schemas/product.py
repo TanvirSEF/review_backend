@@ -14,6 +14,12 @@ class ProductCreate(ProductBase):
     pass
 
 
+class ProductUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+
+
 class ProductListResponse(ProductBase):
     id: int
     average_rating: float = 0.0
