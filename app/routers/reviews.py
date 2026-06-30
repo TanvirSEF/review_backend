@@ -32,6 +32,7 @@ def create_product_review(
     return {
         "id": db_review.id,
         "product_id": db_review.product_id,
+        "user_id": db_review.user_id,
         "rating": db_review.rating,
         "comment": db_review.comment,
         "created_at": db_review.created_at,
@@ -63,6 +64,7 @@ def update_product_review(
     return {
         "id": db_review.id,
         "product_id": db_review.product_id,
+        "user_id": db_review.user_id,
         "rating": db_review.rating,
         "comment": db_review.comment,
         "created_at": db_review.created_at,

@@ -65,6 +65,7 @@ def get_product_details(id: int, db: Session = Depends(get_db)):
         {
             "id": review.id,
             "product_id": review.product_id,
+            "user_id": review.user_id,
             "rating": review.rating,
             "comment": review.comment,
             "created_at": review.created_at,
